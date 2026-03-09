@@ -1,4 +1,4 @@
 [Desktop Entry]
 Type=Application
 Name=Seestar Overlay
-Exec=bash -c 'export DISPLAY=:0; sleep 60; mpv rtsp://10.220.29.70:4555/stream --profile=seestar-overlay'
+Exec=bash -c 'export DISPLAY=:0; sleep 60; mpv rtsp://10.220.29.70:4555/stream --profile=seestar-pip'
