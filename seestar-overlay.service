@@ -1,0 +1,13 @@
+[Unit]
+Description=Seestar RTSP Overlay Monitor
+After=graphical-session.target
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+ExecStart=/bin/bash -c 'sleep 60; /home/mtitus/git-repo/seestar-monitor.sh'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
