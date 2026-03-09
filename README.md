@@ -1,69 +1,93 @@
-# Seestar RTSP Overlay Monitor
+# seestar-pip
 
-This project provides a **persistent RTSP overlay window** for the ZWO Seestar camera feed using **mpv**.
-It is designed to run on a Raspberry Pi (or Linux desktop) alongside applications such as **Stellarium**, providing a small always-on-top video preview of the telescope camera.
+**seestar-pip** provides a persistent **picture-in-picture RTSP overlay** for the ZWO Seestar camera feed using **mpv**.
+
+It is designed for telescope control setups where applications like **Stellarium** are used alongside a small live camera preview of the telescope.
 
 The system automatically:
 
-* Starts the overlay window
-* Waits for the RTSP stream to become available
-* Connects to the stream when detected
-* Monitors the stream every 15 seconds
-* Automatically reconnects if the stream drops
+* launches a small always-on-top overlay window
+* connects to the Seestar RTSP stream
+* detects stalled streams
+* reconnects automatically
+* recovers from Seestar disconnects and reconnects
 
-This makes the overlay resilient to:
+The overlay behaves like a **persistent HUD camera feed**.
 
-* Seestar reboots
-* WiFi interruptions
-* RTSP server restarts
+---
+
+# Features
+
+* Always-on-top **picture-in-picture overlay**
+* Automatic **RTSP reconnection**
+* Detects **stalled video streams**
+* Recovers from:
+
+  * Seestar WiFi reconnects
+  * exiting and re-entering Scenery Mode
+  * RTSP stream freezes
+* Minimal latency
+* Automatically starts at login
 
 ---
 
 # Architecture
 
-The system uses three main components:
-
-```
+```text
 systemd user service
         ↓
-monitor script
+seestar-monitor.sh
         ↓
-mpv player (with IPC socket)
+mpv player
+        ↓
+RTSP stream
 ```
 
-### Flow
+Startup flow:
 
-```
+```text
 login
  ↓
 systemd user service starts
  ↓
 60 second delay
  ↓
-monitor script launches mpv
+monitor script starts mpv
  ↓
-mpv creates overlay window
+overlay window appears
  ↓
-script detects RTSP stream
+script connects to RTSP stream
  ↓
-script instructs mpv to load the stream
- ↓
-video appears in overlay
+video plays
 ```
 
-If the stream disappears, the script detects this and reloads it.
+If the stream stalls:
+
+```text
+video stalls
+ ↓
+script detects playback-time freeze
+ ↓
+overlay shows "Waiting for Seestar..."
+ ↓
+stream reloads automatically
+```
 
 ---
 
-# Files
+# Repository Files
 
 ## `seestar-monitor.sh`
 
-Main monitoring script responsible for:
+Main monitoring script.
 
-* launching mpv
-* detecting RTSP availability
-* reconnecting when needed
+Responsibilities:
+
+* launches mpv
+* monitors RTSP playback state
+* detects stalled streams
+* reconnects the stream when necessary
+* displays overlay status messages
 
 It communicates with mpv using the **mpv IPC socket**.
 
@@ -71,13 +95,13 @@ It communicates with mpv using the **mpv IPC socket**.
 
 ## `seestar-pip.service`
 
-A **systemd user service** that starts the monitor script automatically when the user logs in.
+A **systemd user service** that launches the monitor script automatically when the user logs in.
 
 Features:
 
 * delayed startup (60 seconds)
-* automatic restart if the script crashes
-* integrated logging through `journalctl`
+* automatic restart if the script exits
+* integrates with `journalctl` logging
 
 ---
 
@@ -105,28 +129,29 @@ cache=no
 
 This profile configures:
 
-* a borderless window
-* bottom-right positioning
-* always-on-top behavior
-* low latency streaming
+* borderless overlay window
+* bottom-right screen placement
 * IPC control socket
+* low latency streaming
 
 ---
 
 # Requirements
 
-Packages required:
+Required packages:
 
 ```
 mpv
 socat
+jq
+bc
 netcat-openbsd
 ```
 
-Install them with:
+Install with:
 
 ```
-sudo apt install mpv socat netcat-openbsd
+sudo apt install mpv socat jq bc netcat-openbsd
 ```
 
 ---
@@ -137,23 +162,23 @@ Clone the repository:
 
 ```
 git clone <repo-url>
-cd <repo>
+cd seestar-pip
 ```
 
-Make the script executable:
+Make the monitor script executable:
 
 ```
 chmod +x seestar-monitor.sh
 ```
 
-Copy the systemd service file:
+Install the systemd user service:
 
 ```
 mkdir -p ~/.config/systemd/user
 cp seestar-pip.service ~/.config/systemd/user/
 ```
 
-Reload systemd user services:
+Reload systemd services:
 
 ```
 systemctl --user daemon-reload
@@ -175,7 +200,7 @@ systemctl --user start seestar-pip
 
 # Logs and Debugging
 
-View the service status:
+Check service status:
 
 ```
 systemctl --user status seestar-pip
@@ -187,26 +212,25 @@ View live logs:
 journalctl --user -u seestar-pip -f
 ```
 
-Typical log messages include:
+Typical log messages:
 
 ```
 Starting mpv...
-Stream detected. Connecting...
 Reloading stream...
-Stream lost.
+Stream stalled. Reconnecting...
 ```
 
 ---
 
-# Customization
+# Configuration
 
-You may adjust the RTSP source inside the script:
+RTSP stream location can be modified inside the script:
 
 ```
 STREAM="rtsp://10.220.29.70:4555/stream"
 ```
 
-Overlay size and position can be modified in the `mpv` profile:
+Overlay window size and position are controlled in the mpv profile:
 
 ```
 geometry=426x240-20-20
@@ -218,16 +242,25 @@ Format:
 WIDTHxHEIGHT-XOFFSET-YOFFSET
 ```
 
+Example:
+
+```
+426x240-20-20
+```
+
+Positions the overlay in the **bottom-right corner**.
+
 ---
 
 # Notes
 
-* This project uses a **systemd user service**, not a system service, because mpv must run inside the user's graphical session.
-* The script uses the **mpv IPC interface** to control playback without restarting the player.
+* This project uses a **systemd user service** rather than a system service so that mpv can run inside the user's graphical session.
+* The monitor script uses **mpv's IPC interface** to control playback without restarting the player.
+* The system detects **frozen video streams**, not just dropped network connections.
 
 ---
 
 # License
 
-MIT License (or whatever license your repo uses).
+MIT License (or whichever license your repository uses).
 
