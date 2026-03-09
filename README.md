@@ -69,7 +69,7 @@ It communicates with mpv using the **mpv IPC socket**.
 
 ---
 
-## `seestar-overlay.service`
+## `seestar-pip.service`
 
 A **systemd user service** that starts the monitor script automatically when the user logs in.
 
@@ -88,7 +88,7 @@ Contains the **mpv profile** used for the overlay window.
 Example profile:
 
 ```
-[seestar-overlay]
+[seestar-pip]
 ontop
 no-border
 geometry=426x240-20-20
@@ -150,7 +150,7 @@ Copy the systemd service file:
 
 ```
 mkdir -p ~/.config/systemd/user
-cp seestar-overlay.service ~/.config/systemd/user/
+cp seestar-pip.service ~/.config/systemd/user/
 ```
 
 Reload systemd user services:
@@ -162,13 +162,13 @@ systemctl --user daemon-reload
 Enable the service:
 
 ```
-systemctl --user enable seestar-overlay
+systemctl --user enable seestar-pip
 ```
 
 Start it immediately:
 
 ```
-systemctl --user start seestar-overlay
+systemctl --user start seestar-pip
 ```
 
 ---
@@ -178,13 +178,13 @@ systemctl --user start seestar-overlay
 View the service status:
 
 ```
-systemctl --user status seestar-overlay
+systemctl --user status seestar-pip
 ```
 
 View live logs:
 
 ```
-journalctl --user -u seestar-overlay -f
+journalctl --user -u seestar-pip -f
 ```
 
 Typical log messages include:
