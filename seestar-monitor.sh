@@ -8,7 +8,7 @@ export DISPLAY=:0
 start_mpv() {
     if ! pgrep -x mpv >/dev/null; then
         echo "Starting mpv..."
-        mpv --profile=seestar-overlay &
+        mpv --profile=seestar-pip &
     fi
 }
 
